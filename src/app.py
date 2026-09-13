@@ -29,9 +29,15 @@ LLM_PROVIDERS: dict[str, type] = {
 }
 
 PROVIDER_HYPERPARAMETERS: dict[str, dict[str, object]] = {
-    "logreg": {"C": 0.01},
-    "rf": {"n_estimators": 860, "criterion": "entropy", "min_samples_leaf": 30},
-    "xgboost": {"learning_rate": 0.11, "max_depth": 4, "min_child_weight": 30, "n_estimators": 285},
+    "logreg": {"C": 0.01, "random_state": 42},
+    "rf": {"n_estimators": 860, "criterion": "entropy", "min_samples_leaf": 30, "random_state": 42},
+    "xgboost": {
+        "learning_rate": 0.11,
+        "max_depth": 4,
+        "min_child_weight": 30,
+        "n_estimators": 285,
+        "random_state": 42,
+    },
 }
 
 
@@ -51,13 +57,20 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     provider = PROVIDERS[args.provider]()
+    llm = LLM_PROVIDERS[args.llm_provider]()
     result = run_fraud_pipeline(data, provider)
 
     fairness_df = amount_quartile_breakdown(result.amount_test, result.y_test.to_numpy(), result.y_pred)
     mean, std = compute_normal_stats(result.X_train_res, result.y_train_res)
 
-    llm = LLM_PROVIDERS[args.llm_provider]()
     narratives = generate_top_n_narratives(result.X_test, result.y_prob, mean, std, llm, top_n=args.top_n)
+
+    run_metadata = {
+        **PROVIDER_HYPERPARAMETERS[args.provider],
+        "llm_provider": args.llm_provider,
+        "llm_narratives_requested": len(narratives),
+        "llm_narrative_fallbacks": sum(1 for n in narratives if "explanation unavailable" in n),
+    }
 
     report = build_report(
         title="FraudLens — Fraud Detection Report",
@@ -67,8 +80,12 @@ def main(argv: list[str] | None = None) -> int:
         fairness_df=fairness_df,
         narratives=narratives,
         provider_name=args.provider,
-        hyperparameters=PROVIDER_HYPERPARAMETERS[args.provider],
-        row_counts={"train": len(result.X_train_res), "test": len(result.X_test)},
+        hyperparameters=run_metadata,
+        row_counts={
+            "train_real": result.n_train_real,
+            "train_resampled": len(result.X_train_res),
+            "test": len(result.X_test),
+        },
     )
     report.save(args.output)
     print(f"report written to {args.output}")
