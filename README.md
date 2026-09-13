@@ -1,7 +1,9 @@
 # FraudLens
 
-![Version](https://img.shields.io/badge/version-0.1.0-blue)
+![Version](https://img.shields.io/badge/version-0.1.1-blue)
 ![Python](https://img.shields.io/badge/python-3.12-3776AB)
+
+![FraudLens transaction-risk network](./assets/fraud-lens-hero.png)
 
 FraudLens is an auditable batch fraud-detection workflow for the
 [Kaggle credit-card fraud dataset](https://www.kaggle.com/datasets/mlg-ulb/creditcardfraud).
