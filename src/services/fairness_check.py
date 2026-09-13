@@ -14,14 +14,22 @@ def amount_quartile_breakdown(
     This is an explicitly partial fairness proxy: the dataset carries no
     protected-attribute data, so Amount (the one non-anonymized numeric
     feature) is the only real-world-meaningful lens available.
+
+    Note: when duplicate Amount values collapse the number of actual bins
+    below 4 (via duplicates="drop"), returns however many quartile rows
+    actually resulted (1 to 4), not a forced 4-row output.
     """
-    quartile = pd.qcut(amount, q=4, labels=["Q1", "Q2", "Q3", "Q4"], duplicates="drop")
+    quartile_raw = pd.qcut(amount, q=4, duplicates="drop")
+    categories = list(quartile_raw.cat.categories)
+    label_map = {cat: f"Q{i + 1}" for i, cat in enumerate(categories)}
+    quartile = quartile_raw.map(label_map)
+
     df = pd.DataFrame(
         {"quartile": quartile.to_numpy(), "y_true": np.asarray(y_true), "y_pred": np.asarray(y_pred)}
     )
 
     rows = []
-    for q in ["Q1", "Q2", "Q3", "Q4"]:
+    for q in [f"Q{i + 1}" for i in range(len(categories))]:
         subset = df[df["quartile"] == q]
         n = len(subset)
         flagged = int((subset["y_pred"] == 1).sum())

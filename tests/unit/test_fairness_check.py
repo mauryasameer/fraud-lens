@@ -36,3 +36,23 @@ def test_amount_quartile_breakdown_zero_flags_gives_zero_precision():
 
     assert (result["flag_rate"] == 0.0).all()
     assert (result["precision"] == 0.0).all()
+
+
+def test_amount_quartile_breakdown_duplicate_amounts_collapses_bins():
+    # Many duplicates at same/similar amounts (realistic fraud scenario).
+    # pd.qcut with duplicates="drop" collapses to 1 bin instead of crashing.
+    # Should return 1 row (Q1) not a forced 4-row output.
+    amount = pd.Series([10, 10, 10, 10, 10, 10, 10, 80])
+    y_true = np.array([0, 0, 0, 0, 0, 0, 0, 1])
+    y_pred = np.array([0, 0, 1, 0, 1, 0, 0, 1])
+
+    result = amount_quartile_breakdown(amount, y_true, y_pred)
+
+    # Should produce exactly 1 row (Q1) since duplicates collapse bins
+    assert len(result) == 1
+    assert result.iloc[0]["quartile"] == "Q1"
+    assert result.iloc[0]["n"] == 8
+    # 3 flagged: indices 2, 4, 7
+    assert result.iloc[0]["flag_rate"] == pytest.approx(3.0 / 8)
+    # 1 true positive: index 7 (y_pred=1, y_true=1)
+    assert result.iloc[0]["precision"] == pytest.approx(1.0 / 3)
