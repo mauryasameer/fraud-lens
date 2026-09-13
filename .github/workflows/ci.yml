@@ -5,3 +5,5 @@ on: [push, pull_request]
 jobs:
   ci:
     uses: mauryasameer/the-forge/.github/workflows/reusable-ci.yml@main
+    with:
+      ruff-version: "0.16.7"
