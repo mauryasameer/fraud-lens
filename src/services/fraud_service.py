@@ -13,7 +13,7 @@ from sklearn.metrics import confusion_matrix, roc_curve
 from src.core.interfaces import FraudClassifier
 from src.services.preprocessing import power_transform, split_fraud_data
 
-EXCLUDED_COLUMNS = {"Class", "Time"}
+EXCLUDED_TIME_COLUMN = "Time"
 
 
 @dataclass
@@ -29,6 +29,7 @@ class FraudPipelineResult:
     y_pred: np.ndarray
     y_prob: np.ndarray
     amount_test: pd.Series
+    n_train_real: int
 
 
 def run_fraud_pipeline(
@@ -38,12 +39,13 @@ def run_fraud_pipeline(
     random_state: int = 42,
 ) -> FraudPipelineResult:
     train, test = split_fraud_data(data, target_col=target_col, random_state=random_state)
-    feature_cols = [c for c in data.columns if c not in EXCLUDED_COLUMNS]
+    feature_cols = [c for c in data.columns if c not in {target_col, EXCLUDED_TIME_COLUMN}]
     amount_test = test["Amount"].reset_index(drop=True)
 
     X_train, X_test = power_transform(train[feature_cols], test[feature_cols])
     y_train = train[target_col].reset_index(drop=True)
     y_test = test[target_col].reset_index(drop=True)
+    n_train_real = len(X_train)
 
     X_train_res_arr, y_train_res_arr = smote_oversample(
         X_train.to_numpy(), y_train.to_numpy(), random_state=random_state
@@ -80,4 +82,5 @@ def run_fraud_pipeline(
         y_pred=y_pred,
         y_prob=y_prob,
         amount_test=amount_test,
+        n_train_real=n_train_real,
     )

@@ -60,6 +60,21 @@ def test_run_fraud_pipeline_excludes_time_from_features():
     assert "Amount" in result.X_test.columns
 
 
+def test_run_fraud_pipeline_excludes_renamed_target_column():
+    data = _synthetic_dataset().rename(columns={"Class": "fraud"})
+    result = run_fraud_pipeline(data, StubFraudClassifier(), target_col="fraud")
+
+    assert "fraud" not in result.X_test.columns
+    assert "Time" not in result.X_test.columns
+
+
+def test_run_fraud_pipeline_reports_pre_smote_train_count():
+    data = _synthetic_dataset()
+    result = run_fraud_pipeline(data, StubFraudClassifier())
+
+    assert result.n_train_real < len(result.y_train_res)
+
+
 def test_run_fraud_pipeline_handles_single_class_test_fold(mocker):
     data = _synthetic_dataset()
     train = data.iloc[:280].reset_index(drop=True)
