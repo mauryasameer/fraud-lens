@@ -15,7 +15,7 @@ DISCLAIMER = (
 )
 
 NARRATIVE_PROMPT = PromptTemplate(
-    "A transaction was flagged with fraud probability {probability:.2%}. Its most unusual "
+    "A transaction has a predicted fraud probability of {probability:.2%}. Its most unusual "
     "features versus normal transactions are: {feature_summary}. These features are anonymized "
     "PCA components with no recoverable real-world meaning — do not invent what they represent "
     "or assert a causal reason for the flag. In 2-3 sentences, describe the statistical pattern "
@@ -70,6 +70,9 @@ def generate_top_n_narratives(
     top_n: int = 5,
     top_k: int = 3,
 ) -> list[str]:
+    if top_n < 0:
+        raise ValueError("top_n must be non-negative")
+
     order = np.argsort(-np.asarray(y_prob))[:top_n]
     return [
         generate_transaction_narrative(X_test.iloc[i], float(y_prob[i]), mean, std, llm, top_k=top_k)

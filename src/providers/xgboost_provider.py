@@ -11,6 +11,8 @@ class XGBoostFraudClassifier(FraudClassifier):
     """XGBoost. learning_rate=0.11/max_depth=4/min_child_weight=30/n_estimators=285 is
     the notebook's own CV-found winner on the SMOTE-oversampled data."""
 
+    uses_smote = True
+
     def __init__(
         self,
         learning_rate: float = 0.11,

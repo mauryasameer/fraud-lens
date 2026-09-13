@@ -9,8 +9,8 @@ reviewed by a person before any action is taken.
 ## Explainability Boundary
 
 `V1`-`V28` are PCA-anonymized components of the original transaction data; they carry no
-recoverable real-world meaning. Every generated explanation (see "Top Flagged Transactions —
-Explanations" in the report) describes a *statistical* pattern — which anonymized features
+recoverable real-world meaning. Every generated explanation (see "Highest Fraud-Probability
+Transactions — Explanations" in the report) describes a *statistical* pattern — which anonymized features
 deviated most from normal-class behavior, and by how much — never a causal or business claim
 about why a transaction is fraudulent. This boundary is stated in the report itself (a permanent
 banner), not only here.
@@ -25,10 +25,12 @@ precision breakdown by `Amount` quartile — an explicitly partial proxy, not a 
 ## LLM Controls
 
 The narrative-generation step calls the configured LLM provider at `temperature=0` for every
-request, so a given transaction's explanation is reproducible rather than randomly sampled. The
-only inputs reaching the prompt are numeric feature names, computed z-scores, and a probability
-value — no retrieved documents or user-supplied free text ever reach it, so the prompt-injection
-surface is assessed as low.
+request, so a given transaction's explanation is reproducible rather than randomly sampled.
+Before model inference, the CLI requires the fixed Kaggle credit-card schema (Time, Amount,
+Class, and V1-V28), rejecting unexpected column names. The only inputs reaching the prompt are
+therefore approved numeric feature names, computed z-scores, and a probability value; no
+retrieved documents or user-supplied free text reaches it, so the prompt-injection surface is
+assessed as low.
 
 ## Audit Trail
 

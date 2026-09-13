@@ -22,6 +22,10 @@ class StubFraudClassifier(FraudClassifier):
         return (X["V0"] > 0).astype(float).to_numpy()
 
 
+class SmoteStubFraudClassifier(StubFraudClassifier):
+    uses_smote = True
+
+
 def _synthetic_dataset(n=400, positive_rate=0.1):
     X, y = make_classification(
         n_samples=n,
@@ -46,8 +50,15 @@ def test_run_fraud_pipeline_produces_expected_shape():
     assert result.confusion_matrix_fig is not None
     assert result.roc_curve_fig is not None
     assert len(result.amount_test) == len(result.X_test) == len(result.y_test)
-    # SMOTE oversamples the minority class to match the majority count.
+    assert result.n_train_real == len(result.y_train_res)
+
+
+def test_run_fraud_pipeline_applies_smote_only_when_provider_requests_it():
+    data = _synthetic_dataset()
+    result = run_fraud_pipeline(data, SmoteStubFraudClassifier())
+
     train_counts = result.y_train_res.value_counts()
+    assert result.n_train_real < len(result.y_train_res)
     assert train_counts[0] == train_counts[1]
 
 
@@ -70,7 +81,7 @@ def test_run_fraud_pipeline_excludes_renamed_target_column():
 
 def test_run_fraud_pipeline_reports_pre_smote_train_count():
     data = _synthetic_dataset()
-    result = run_fraud_pipeline(data, StubFraudClassifier())
+    result = run_fraud_pipeline(data, SmoteStubFraudClassifier())
 
     assert result.n_train_real < len(result.y_train_res)
 

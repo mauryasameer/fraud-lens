@@ -26,10 +26,23 @@ def fetch_creditcard_data() -> Path:
 
     zip_path = DATA_DIR / "creditcardfraud.zip"
     with zipfile.ZipFile(zip_path) as zf:
-        zf.extractall(DATA_DIR)
+        extract_archive(zf, DATA_DIR)
     zip_path.unlink()
 
     return DATA_DIR
+
+
+def extract_archive(archive: zipfile.ZipFile, destination: Path) -> None:
+    """Extract an archive only when every member remains under destination."""
+    resolved_destination = destination.resolve()
+
+    for member in archive.infolist():
+        member_path = (destination / member.filename).resolve()
+        if not member_path.is_relative_to(resolved_destination):
+            raise ValueError(f"unsafe archive member: {member.filename}")
+
+    for member in archive.infolist():
+        archive.extract(member, destination)
 
 
 if __name__ == "__main__":

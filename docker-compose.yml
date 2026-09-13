@@ -2,7 +2,8 @@ services:
   fraud-lens:
     build: .
     env_file:
-      - .env
+      - path: .env
+        required: false
     volumes:
       - ./src/data:/home/app/fraud-lens/src/data
       - ./reports:/home/app/fraud-lens/reports

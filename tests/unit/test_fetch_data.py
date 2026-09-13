@@ -3,6 +3,20 @@ import pytest
 import scripts.fetch_data as fetch_data
 
 
+def test_extract_archive_rejects_path_traversal_members(tmp_path):
+    archive_path = tmp_path / "unsafe.zip"
+    destination = tmp_path / "data"
+
+    with fetch_data.zipfile.ZipFile(archive_path, "w") as archive:
+        archive.writestr("../outside.csv", "unsafe")
+
+    with fetch_data.zipfile.ZipFile(archive_path) as archive:
+        with pytest.raises(ValueError, match="unsafe archive member"):
+            fetch_data.extract_archive(archive, destination)
+
+    assert not (tmp_path / "outside.csv").exists()
+
+
 def test_fetch_creditcard_data_exits_when_credentials_missing(mocker, tmp_path):
     mocker.patch.object(fetch_data, "KAGGLE_CREDENTIALS", tmp_path / "missing.json")
     mock_run = mocker.patch("subprocess.run")

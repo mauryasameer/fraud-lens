@@ -47,11 +47,15 @@ def run_fraud_pipeline(
     y_test = test[target_col].reset_index(drop=True)
     n_train_real = len(X_train)
 
-    X_train_res_arr, y_train_res_arr = smote_oversample(
-        X_train.to_numpy(), y_train.to_numpy(), random_state=random_state
-    )
-    X_train_res = pd.DataFrame(X_train_res_arr, columns=feature_cols)
-    y_train_res = pd.Series(y_train_res_arr)
+    if provider.uses_smote:
+        X_train_res_arr, y_train_res_arr = smote_oversample(
+            X_train.to_numpy(), y_train.to_numpy(), random_state=random_state
+        )
+        X_train_res = pd.DataFrame(X_train_res_arr, columns=feature_cols)
+        y_train_res = pd.Series(y_train_res_arr)
+    else:
+        X_train_res = X_train.reset_index(drop=True)
+        y_train_res = y_train.reset_index(drop=True)
 
     provider.fit(X_train_res, y_train_res)
     y_pred = provider.predict(X_test)

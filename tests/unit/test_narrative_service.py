@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import pytest
 
 from src.services.narrative_service import (
     DISCLAIMER,
@@ -88,3 +89,13 @@ def test_generate_top_n_narratives_falls_back_on_llm_failure():
     narratives = generate_top_n_narratives(X_test, y_prob, mean, std, FailingLLM(), top_n=1)
 
     assert "explanation unavailable" in narratives[0]
+
+
+def test_generate_top_n_narratives_rejects_negative_top_n():
+    X_test = pd.DataFrame({"V1": [0.5], "V2": [0.1]})
+    y_prob = np.array([0.9])
+    mean = pd.Series({"V1": 0.0, "V2": 0.0})
+    std = pd.Series({"V1": 1.0, "V2": 1.0})
+
+    with pytest.raises(ValueError, match="top_n must be non-negative"):
+        generate_top_n_narratives(X_test, y_prob, mean, std, StubLLM(), top_n=-1)

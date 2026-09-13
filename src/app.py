@@ -40,13 +40,43 @@ PROVIDER_HYPERPARAMETERS: dict[str, dict[str, object]] = {
     },
 }
 
+EXPECTED_CREDITCARD_COLUMNS = frozenset(
+    {"Time", "Amount", "Class", *(f"V{i}" for i in range(1, 29))}
+)
+
+
+def non_negative_int(value: str) -> int:
+    """Parse a non-negative command-line integer."""
+    parsed = int(value)
+    if parsed < 0:
+        raise argparse.ArgumentTypeError("must be non-negative")
+    return parsed
+
+
+def validate_creditcard_schema(data: pd.DataFrame) -> None:
+    """Ensure input matches the fixed Kaggle credit-card fraud schema."""
+    if data.columns.has_duplicates:
+        raise ValueError("duplicate columns are not allowed")
+
+    columns = set(data.columns)
+    missing = EXPECTED_CREDITCARD_COLUMNS - columns
+    unexpected = columns - EXPECTED_CREDITCARD_COLUMNS
+
+    if missing or unexpected:
+        details: list[str] = []
+        if missing:
+            details.append(f"missing columns: {', '.join(sorted(missing))}")
+        if unexpected:
+            details.append(f"unexpected columns: {', '.join(sorted(unexpected))}")
+        raise ValueError("; ".join(details))
+
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="fraud-lens")
     parser.add_argument("--data", default="src/data/creditcard.csv")
     parser.add_argument("--provider", choices=list(PROVIDERS.keys()), default="xgboost")
     parser.add_argument("--llm-provider", choices=list(LLM_PROVIDERS.keys()), default="ollama")
-    parser.add_argument("--top-n", type=int, default=5)
+    parser.add_argument("--top-n", type=non_negative_int, default=5)
     parser.add_argument("--output", default="reports/fraud_report.html")
     args = parser.parse_args(argv)
 
@@ -54,6 +84,12 @@ def main(argv: list[str] | None = None) -> int:
         data = pd.read_csv(args.data)
     except (FileNotFoundError, pd.errors.ParserError) as exc:
         print(f"error: could not read data file {args.data}: {exc}", file=sys.stderr)
+        return 1
+
+    try:
+        validate_creditcard_schema(data)
+    except ValueError as exc:
+        print(f"error: invalid credit-card data schema: {exc}", file=sys.stderr)
         return 1
 
     provider = PROVIDERS[args.provider]()

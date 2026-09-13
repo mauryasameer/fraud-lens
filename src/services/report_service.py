@@ -74,7 +74,7 @@ def build_report(
     )
     report.add_section(
         ReportSection(
-            title="Top Flagged Transactions — Explanations",
+            title="Highest Fraud-Probability Transactions — Explanations",
             content=" ".join(f"<p>{html.escape(n)}</p>" for n in narratives),
         )
     )

@@ -13,6 +13,8 @@ class FraudClassifier(ABC):
     changing one constructor argument — no service code changes.
     """
 
+    uses_smote = False
+
     @abstractmethod
     def fit(self, X: pd.DataFrame, y: pd.Series) -> None:
         """Fit the model on preprocessed, training-fold-only-oversampled data."""
