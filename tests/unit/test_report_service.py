@@ -1,8 +1,8 @@
 import matplotlib.pyplot as plt
 import pandas as pd
+from meerax.eval.classification import ClassificationMetrics
 
 from src.services.report_service import GOVERNANCE_BANNER, build_report
-from meerax.eval.classification import ClassificationMetrics
 
 
 def _dummy_fig():
